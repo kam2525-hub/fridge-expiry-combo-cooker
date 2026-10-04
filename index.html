@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冷蔵庫の余り物ごちゃまぜ一撃レシピメーカー</title>
+    <style>
+        :root {
+            --primary: #ff6b6b;
+            --primary-dark: #ee5253;
+            --secondary: #48dbfb;
+            --accent: #ff9f43;
+            --bg-color: #f7f9fc;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --border-radius: 16px;
+            --shadow: 0 10px 25px rgba(0,0,0,0.05);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .logo-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            transition: var(--transition);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        .category-container {
+            margin-bottom: 16px;
+        }
+
+        .category-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .ingredient-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            background: #f1f2f6;
+            border: 2px solid transparent;
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chip:hover {
+            background: #dfe4ea;
+        }
+
+        .chip.selected {
+            background: #fff0f0;
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+            transform: scale(1.05);
+        }
+
+        .custom-input-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .custom-input-box input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #dfe4ea;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .custom-input-box input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-add {
+            background: #dfe4ea;
+            border: none;
+            padding: 0 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-add:hover {
+            background: #ced6e0;
+        }
+
+        .counter-box {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .counter-box span {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .btn-generate {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-generate:disabled {
+            background: #b2bec3;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* レシピ出力エリア */
+        #recipe-result {
+            display: none;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .recipe-header {
+            border-bottom: 2px dashed #f1f2f6;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+
+        .recipe-tag {
+            background: var(--secondary);
+            color: #0984e3;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .recipe-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .recipe-section-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-sub);
+            margin: 16px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ingredient-list {
+            list-style: none;
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 10px;
+        }
+
+        .ingredient-list li {
+            font-size: 0.9rem;
+            padding: 4px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .steps-list {
+            padding-left: 20px;
+        }
+
+        .steps-list li {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-sub {
+            flex: 1;
+            background: #f1f2f6;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: var(--transition);
+        }
+
+        .btn-sub:hover {
+            background: #dfe4ea;
+        }
+
+        /* ローディングアニメーション */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo-icon">🍳</div>
+            <h1>冷蔵庫の余り物ごちゃまぜ一撃レシピメーカー</h1>
+            <p class="subtitle">半端な食材を3つ選ぶだけで、今すぐ作れる美味しいおかずが爆誕！</p>
+        </header>
+
+        <!-- 食材選択カード -->
+        <div class="card" id="selection-card">
+            <div class="section-title">
+                <span>🥕</span> 食材をえらぶ <span style="font-size: 0.8rem; color: var(--text-sub); font-weight: normal;">(3つ選択)</span>
+            </div>
+
+            <!-- カテゴリ別チップ -->
+            <div id="categories-wrapper"></div>
+
+            <!-- 自由入力 -->
+            <div class="custom-input-box">
+                <input type="text" id="custom-ingredient" placeholder="その他の食材を追加 (例: 納豆、ちくわ)">
+                <button class="btn-add" id="btn-add-custom">追加</button>
+            </div>
+
+            <div class="counter-box">
+                選択中: <span id="selected-count">0</span> / 3
+            </div>
+
+            <button class="btn-generate" id="btn-generate" disabled>
+                ✨ 一撃レシピを組み立てる！
+            </button>
+        </div>
+
+        <!-- ローディング -->
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p style="color: var(--text-sub); font-size: 0.9rem;">冷蔵庫をのぞきこみ中...</p>
+        </div>
+
+        <!-- レシピ出力カード -->
+        <div class="card" id="recipe-result">
+            <div class="recipe-header">
+                <div class="recipe-tag" id="res-category">スピードおかず</div>
+                <div class="recipe-title" id="res-title">タイトル</div>
+            </div>
+
+            <div class="recipe-section-title">📦 つかう食材（3つ ＋ 家の調味料）</div>
+            <ul class="ingredient-list" id="res-ingredients"></ul>
+
+            <div class="recipe-section-title">🔥 一撃クッキング手順</div>
+            <ol class="steps-list" id="res-steps"></ol>
+
+            <div class="action-buttons">
+                <button class="btn-sub" id="btn-retry">もう一度えらび直す</button>
+                <button class="btn-sub" id="btn-copy" style="background: var(--primary); color: white;">レシピをコピー</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 食材データマスタ
+        const DEFAULT_CATEGORIES = [
+            { name: "野菜・きのこ", items: ["キャベツ", "玉ねぎ", "人参", "ピーマン", "もやし", "トマト", "じゃがいも", "きのこ", "ほうれん草"] },
+            { name: "肉・魚・卵", items: ["豚肉", "鶏肉", "ひき肉", "ベーコン", "ウインナー", "ツナ缶", "卵", "ちくわ", "カニカマ"] },
+            { name: "豆腐・チーズ・その他", items: ["豆腐", "チーズ", "キムチ", "納豆", "油揚げ", "バター", "マヨネーズ", "春雨"] }
+        ];
+
+        // 状態管理
+        let categories = JSON.parse(localStorage.getItem('recipe_categories')) || DEFAULT_CATEGORIES;
+        let selectedIngredients = [];
+
+        // DOM要素
+        const categoriesWrapper = document.getElementById('categories-wrapper');
+        const selectedCountEl = document.getElementById('selected-count');
+        const btnGenerate = document.getElementById('btn-generate');
+        const selectionCard = document.getElementById('selection-card');
+        const loader = document.getElementById('loader');
+        const recipeResult = document.getElementById('recipe-result');
+        const customInput = document.getElementById('custom-ingredient');
+        const btnAddCustom = document.getElementById('btn-add-custom');
+        const btnRetry = document.getElementById('btn-retry');
+        const btnCopy = document.getElementById('btn-copy');
+
+        // 初期描画
+        function renderCategories() {
+            categoriesWrapper.innerHTML = '';
+            categories.forEach((cat, catIndex) => {
+                const container = document.createElement('div');
+                container.className = 'category-container';
+                
+                const label = document.createElement('span');
+                label.className = 'category-label';
+                label.textContent = cat.name;
+                container.appendChild(label);
+
+                const grid = document.createElement('div');
+                grid.className = 'ingredient-grid';
+
+                cat.items.forEach(item => {
+                    const chip = document.createElement('div');
+                    chip.className = 'chip';
+                    if (selectedIngredients.includes(item)) {
+                        chip.classList.add('selected');
+                    }
+                    chip.textContent = item;
+                    chip.addEventListener('click', () => toggleIngredient(item, chip));
+                    grid.appendChild(chip);
+                });
+
+                container.appendChild(grid);
+                categoriesWrapper.appendChild(container);
+            });
+            updateState();
+        }
+
+        // 食材選択の切り替え
+        function toggleIngredient(item, chipElement) {
+            const index = selectedIngredients.indexOf(item);
+            if (index > -1) {
+                selectedIngredients.splice(index, 1);
+                chipElement.classList.remove('selected');
+            } else {
+                if (selectedIngredients.length >= 3) {
+                    alert('食材は3つまで選択できます！');
+                    return;
+                }
+                selectedIngredients.push(item);
+                chipElement.classList.add('selected');
+            }
+            updateState();
+        }
+
+        // 状態の更新（カウンター・ボタン活性）
+        function updateState() {
+            selectedCountEl.textContent = selectedIngredients.length;
+            if (selectedIngredients.length === 3) {
+                btnGenerate.disabled = false;
+            } else {
+                btnGenerate.disabled = true;
+            }
+            localStorage.setItem('recipe_selected', JSON.stringify(selectedIngredients));
+        }
+
+        // カスタム食材追加
+        btnAddCustom.addEventListener('click', () => {
+            const val = customInput.value.trim();
+            if (!val) return;
+            if (selectedIngredients.length >= 3) {
+                alert('食材は3つまで選択できます！');
+                return;
+            }
+            // 最初のカテゴリに追加
+            categories[0].items.push(val);
+            selectedIngredients.push(val);
+            
+            localStorage.setItem('recipe_categories', JSON.stringify(categories));
+            customInput.value = '';
+            renderCategories();
+        });
+
+        // 組合せからロジカルにレシピを生成するエンジン
+        function generateRecipe(ingreds) {
+            const [i1, i2, i3] = ingreds;
+            
+            // 調理スタイルの決定ロジック（簡易判定）
+            const isSoupOrNabe = ingreds.includes('豆腐') || ingreds.includes('もやし') || ingreds.includes('春雨');
+            const isItameshi = ingreds.includes('チーズ') || ingreds.includes('トマト') || ingreds.includes('ベーコン');
+            const isChuka = ingreds.includes('キムチ') || ingreds.includes('豚肉') || ingreds.includes('ピーマン');
+
+            let title = `${i1}と${i2}と${i3}のごちゃまぜ一撃炒め`;
+            let category = "スピードおかず";
+            let seasonings = "塩コショウ、醤油（大さじ1）、ごま油（小さじ1）";
+            let steps = [
+                `食材（${i1}、${i2}、${i3}）を食べやすい大きさにザクザクと切る。`,
+                `フライパンにごま油を熱し、火の通りにくい食材から順に強火で一気に炒め合わせる。`,
+                `全体に油が回ったら、塩コショウと醤油を回し入れ、香ばしい香りが立ったら器に盛る！`
+            ];
+
+            if (isItameshi) {
+                title = `${i1}と${i2}の香ばしチーズソテー`;
+                category = "洋風おつまみ";
+                seasonings = "塩コショウ、コンソメ（小さじ1/2）、オリーブオイル、チーズ";
+                steps = [
+                    `具材を食べやすい大きさに切り、オリーブオイルを熱したフライパンで炒める。`,
+                    `火が通ったらコンソメと塩コショウでしっかり味を調える。`,
+                    `仕上げに${i3}（またはチーズ）を上からドバッと掛け、蓋をして1分蒸し焼きにしたら完成！`
+                ];
+            } else if (isChuka) {
+                title = `スタミナ爆発！${i1}・${i2}・${i3}のうま辛炒め`;
+                category = "ご飯がすすむおかず";
+                seasonings = "鶏ガラスープの素（小さじ1）、醤油（小さじ1）、ニンニクチューブ少々";
+                steps = [
+                    `具材を一口大に切り、フライパンにサラダ油とニンニクチューブを入れて熱する。`,
+                    `具材を投入し、強火で一気に炒め合わせる。`,
+                    `鶏ガラスープの素と醤油を絡め、全体にしんなりしたら一気にお皿へ盛り付ける！`
+                ];
+            } else if (isSoupOrNabe) {
+                title = `5分で温まる！${i1}と${i2}のズボラうま汁`;
+                category = "あったかスープ";
+                seasonings = "水（200ml）、和風だし or 鶏ガラスープの素（小さじ1）、醤油（小さじ1）";
+                steps = [
+                    `鍋に水とスープの素、切った具材（${i1}、${i2}、${i3}）をすべてぶち込む。`,
+                    `中火にかけて、沸騰したら弱火にして3分ほど煮込む。`,
+                    `味見をして薄ければ塩で調え、器に盛り付けたら完成！`
+                ];
+            }
+
+            return { title, category, seasonings, steps };
+        }
+
+        // レシピ生成ボタンイベント
+        btnGenerate.addEventListener('click', () => {
+            selectionCard.style.display = 'none';
+            loader.style.display = 'block';
+
+            setTimeout(() => {
+                const recipe = generateRecipe(selectedIngredients);
+                
+                document.getElementById('res-category').textContent = recipe.category;
+                document.getElementById('res-title').textContent = recipe.title;
+                
+                const ingList = document.getElementById('res-ingredients');
+                ingList.innerHTML = `
+                    <li><span>🔹 ${selectedIngredients[0]}</span> <span>適量</span></li>
+                    <li><span>🔹 ${selectedIngredients[1]}</span> <span>適量</span></li>
+                    <li><span>🔹 ${selectedIngredients[2]}</span> <span>適量</span></li>
+                    <li><span>🧂 基本の調味料</span> <span>${recipe.seasonings}</span></li>
+                `;
+
+                const stepsList = document.getElementById('res-steps');
+                stepsList.innerHTML = recipe.steps.map(step => `<li>${step}</li>`).join('');
+
+                loader.style.display = 'none';
+                recipeResult.style.display = 'block';
+            }, 1000); // 1秒の演出ローディング
+        });
+
+        // やり直す
+        btnRetry.addEventListener('click', () => {
+            recipeResult.style.display = 'none';
+            selectionCard.style.display = 'block';
+            selectedIngredients = [];
+            renderCategories();
+        });
+
+        // コピー機能
+        btnCopy.addEventListener('click', () => {
+            const title = document.getElementById('res-title').textContent;
+            const ing1 = selectedIngredients[0];
+            const ing2 = selectedIngredients[1];
+            const ing3 = selectedIngredients[2];
+            
+            const textToCopy = `【${title}】\n■使った食材: ${ing1}, ${ing2}, ${ing3}\n#一撃レシピメーカー`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('レシピの概要をクリップボードにコピーしました！');
+            });
+        });
+
+        // 初期化実行
+        renderCategories();
+    </script>
+</body>
+</html>
